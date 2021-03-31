@@ -1,0 +1,15 @@
+{
+  "name": "disney-parks-is-it-open",
+  "version": "1.0.0",
+  "description": "check park opening",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "got": "^11.8.2",
+    "jquery": "^3.6.0"
+  }
+}

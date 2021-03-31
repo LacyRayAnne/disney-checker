@@ -1,0 +1,204 @@
+<html lang="en">
+
+</html>
+
+<head>
+    <meta charset="utf-8">
+
+    <title>The HTML5 Herald</title>
+    <meta name="description" content="The HTML5 Herald">
+    <meta name="author" content="SitePoint">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <style>
+         #results {
+             background-color: white;
+             display: flex;
+            justify-content: space-evenly;
+
+         }
+         .weekday{
+             display:flex;
+             flex-direction: column;
+            justify-content: flex-start;
+            align-items: stretch;
+         }
+
+         #dates {
+             background-color: white;
+             display: flex;
+            flex-wrap: wrap;
+            justify-content: space-evenly;
+
+         }
+         #dates > .card {
+             display: flex;
+             width: 10vw;
+             height: 10vw;
+             flex-direction: column;
+             justify-content: center;
+             align-items: center;
+             padding:2%;
+             margin:1%;
+         }
+         .card > .title {
+             text-align: center;
+            font-size: 1em;
+             padding:2%;
+             width: 100%;
+             background-color: thistle;
+
+         }
+         .card > .bool{
+             text-align: center;
+            padding:2%;
+             font-size: 4em;
+            height:100%;
+            width: 100%;
+         }
+        
+         .card > .true {
+             background-color: chartreuse;
+         }
+         .card > .false {
+             background-color: crimson;
+         }
+         .card > .neutral {
+             background-color: grey;
+         }
+
+    </style>
+
+</head>
+
+<body>
+    <!-- <script src="./js/scripts.js"></script> -->
+    <script>
+
+
+        function caller() {
+            var s = $("#start").val();
+            var e = $("#end").val();
+            var park = $("#parkPicker").val();
+            $.ajax({
+                //https://disneyworld.disney.go.com/availability-calendar/api/calendar?segment=tickets&startDate=2021-10-01&endDate=2021-10-02
+                url: "/caller",
+                method: 'POST',
+                contentType: "application/json; charset=utf-8",
+                dataType: 'json',
+                data: JSON.stringify({ start: s, end: e, park: park, passtype: $('#passPicker').val() }),
+                success: function (result) {
+                    $("#dates").text("");
+                    function cardMaker(date, bool) {
+                        if (date) {
+                            title = "Date: "+date;
+                        } else {
+                            title ="not in range";
+                        }
+
+                        if (bool == true){
+                            var symbol = '&#10004';
+                            var className = 'true';
+                        } else if (bool== false){
+                            var symbol = '&#10006';
+                            var className = 'false';
+                        } else {
+                            var symbol = "&#10145";
+                            var className = 'neutral';
+                        }
+                        return '<div class = "card"><div class = "title">'+title+'</div><div class = "bool '+ className +'"> '+symbol+'</div></div>'
+                    }
+                
+                    var dates = 0;
+                    var trues = 0;
+                    for (const [date, bool] of Object.entries(result["dates"])) {
+                        var day = new Date(date);
+                        var weekday = day.getDay();
+
+                        if (dates == 0) {
+                            $("#results").html("<div class = 'weekday' id = '0'></div><div class = 'weekday' id = '1'></div><div class = 'weekday' id = '2'></div><div class = 'weekday' id = '3'></div><div class = 'weekday' id = '4'></div><div class = 'weekday' id = '5'></div><div class = 'weekday' id = '6'></div>");
+                            var i=0;
+                            while (i < weekday) {
+                                $('#'+i).append(cardMaker());
+                                i++;
+                            }
+                        }
+
+                        $('#'+ weekday).append(cardMaker(date, bool));
+
+                            // $("#dates").append(cardMaker(date, bool));
+                        if (bool == true) {
+
+                            trues++;
+                            $("body").css("background-color", "#00ff66");
+                        }
+                        dates++;
+                    }
+
+                    if (trues == 0) {
+                        $("body").css("background-color", "#ffffff");
+                    }
+
+
+                },
+                error: function (e) {
+                    console.log("in the error");
+                    console.log(e);
+                }
+            });
+        }
+
+
+        $(function () {
+
+
+            $("#submit").click(function () {
+                console.log("hello");
+                caller();
+            });
+
+        });
+    </script>
+
+    <div>
+        <label>
+            Start Date:
+            <input type="date" id="start" name="start_date">
+        </label>
+
+        <label>
+            End Date:
+            <input type="date" id="end" name="end_date">
+        </label>
+    </div>
+
+    <div>
+        <label for="parkPicker">Choose a park:</label>
+        <select name="parkPicker" id="parkPicker">
+            <option value="hollywood">Hollywood Studios</option>
+            <option value="magicKingdom">Magic Kingdom</option>
+            <option value="epcot">EPCOT</option>
+            <option value="animalKingdom">Animal Kingdom</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="passPicker">Pass type?:</label>
+
+        <select name="passPicker" id="passPicker">
+            <option value="tickets">Tickets</option>
+            <option value="passholder">Annual Pass</option>
+        </select>
+    </div>
+
+    <button id="submit">Submit</button>
+
+    <div id="results">
+    </div>
+
+    
+    <div id='dates'>
+    </div>
+</body>
+
+</html>
