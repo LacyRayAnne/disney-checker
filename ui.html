@@ -5,10 +5,12 @@
 <head>
     <meta charset="utf-8">
 
-    <title>The HTML5 Herald</title>
-    <meta name="description" content="The HTML5 Herald">
-    <meta name="author" content="SitePoint">
+    <title>Disney Checkerd</title>
+    <meta name="description" content="Disney Checker">
+    <meta name="author" content="Lacy Snider">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://momentjs.com/downloads/moment.js"></script>
+    <script src="https://momentjs.com/downloads/moment-timezone-with-data.js"></script>
 
     <style>
          #results {
@@ -31,7 +33,7 @@
             justify-content: space-evenly;
 
          }
-         #dates > .card {
+         .card {
              display: flex;
              width: 10vw;
              height: 10vw;
@@ -39,7 +41,7 @@
              justify-content: center;
              align-items: center;
              padding:2%;
-             margin:1%;
+             margin:2%;
          }
          .card > .title {
              text-align: center;
@@ -112,8 +114,10 @@
                     var dates = 0;
                     var trues = 0;
                     for (const [date, bool] of Object.entries(result["dates"])) {
-                        var day = new Date(date);
-                        var weekday = day.getDay();
+
+                        var day = moment.tz(date, 'US/Eastern');
+                        console.log(day);
+                        var weekday = day.day();
 
                         if (dates == 0) {
                             $("#results").html("<div class = 'weekday' id = '0'></div><div class = 'weekday' id = '1'></div><div class = 'weekday' id = '2'></div><div class = 'weekday' id = '3'></div><div class = 'weekday' id = '4'></div><div class = 'weekday' id = '5'></div><div class = 'weekday' id = '6'></div>");
@@ -148,6 +152,10 @@
             });
         }
 
+        function repeater () {
+            setInterval(caller, 60000);
+        }
+
 
         $(function () {
 
@@ -155,6 +163,7 @@
             $("#submit").click(function () {
                 console.log("hello");
                 caller();
+                repeater();
             });
 
         });

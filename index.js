@@ -1,7 +1,7 @@
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
-const { default: got } = require('got/dist/source');
+const taskDb = require('./task_db');
 
 
 
@@ -116,13 +116,15 @@ async function checkAvailability(startDate, endDate, passtype, hopefullyOpen, cb
 
             parkOpenData = {
                 'park': parkCode,
-                'dates': availabilityMap
+                'dates': availabilityMap,
+                'pass': passtype,
             };
             console.log(parkOpenData);
 
             for (const [date, value] of Object.entries(availabilityMap)) {
                 if (value == true) {
                     sendNotification(parkOpenData);
+                    break
                 }
             }
 
@@ -138,30 +140,7 @@ async function checkAvailability(startDate, endDate, passtype, hopefullyOpen, cb
     req.end();
 }
 
-async function getParkData(startDate, endDate, passType) {
-    //https://disneyworld.disney.go.com/availability-calendar/api/calendar?segment=tickets&startDate=2021-10-01&endDate=2021-10-02
-    let url = 'https://disneyworld.disney.go.com/availability-calendar/api/calendar';
-    let searchParams = {
-        segment: passType,
-        startDate: startDate,
-        endDate: endDate,
-    }
-    console.log(searchParams);
-    let body = await tryGot(url, searchParams);
-    return body;
-    async function tryGot(url, searchParams) {
-        try {
-            const response = await got('https://disneyworld.disney.go.com/availability-calendar/api/calendar?segment=tickets&startDate=2021-10-01&endDate=2021-10-02');
-            // const response = await got(url, {searchParams: searchParams});
-            console.log(response.body);
-            return JSON.parse(response.body);
-        } catch (err) {
-            console.log(err.response.body);
-            (err);
-        }
-    }
 
-}
 
 
 function sendNotification(parkOpenData) {
@@ -195,7 +174,7 @@ function sendNotification(parkOpenData) {
     const data = JSON.stringify({
         value1: park,
         value2: dateList,
-        value3: "yay"
+        value3: parkOpenData['pass']
     })
 
     const iftttUrl = {
@@ -209,19 +188,19 @@ function sendNotification(parkOpenData) {
         }
     }
 
-    // const req = https.request(iftttUrl, res => {
-    //     console.log(`statusCode: ${res.statusCode}`)
+    const req = https.request(iftttUrl, res => {
+        console.log(`statusCode: ${res.statusCode}`)
 
-    //     res.on('data', d => {
-    //       process.stdout.write(d)
-    //     })
-    //   })
+        res.on('data', d => {
+          process.stdout.write(d)
+        })
+      })
 
-    //   req.on('error', error => {
-    //     console.error(error)
-    //   })
+      req.on('error', error => {
+        console.error(error)
+      })
 
-    //   req.write(data)
-    //   req.end()
+      req.write(data)
+      req.end()
 
 }
