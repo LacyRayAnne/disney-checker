@@ -108,4 +108,4 @@ function clearDatabase() {
 }
 
 
-module.exports = { createDatabaseEntry, readDatabaseEntry, updateDatabaseEntry, deleteDatabaseEntry, queryDatabaseForDbId, listAll, clearDatabase, searchDatabase };
+module.exports = { addJob, readDatabaseEntry, updateDatabaseEntry, deleteDatabaseEntry, queryDatabaseForDbId, listAll, clearDatabase, searchDatabase };
