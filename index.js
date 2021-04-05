@@ -13,6 +13,12 @@ var animalKingdom = "80007823";
 
 var uiHtml = "";
 
+
+function repeater() {
+    checkJobs();
+    setInterval(checkJobs, 60000);
+}
+
 fs.readFile('./ui.html', function (err, html) {
     if (err) {
         throw err;
@@ -81,7 +87,6 @@ http.createServer(function (req, res) {
 
 
             req.on("end", async function () {
-                checkJobs();
                 res.writeHead(200, { "Content-Type": "text/html" });
                 res.end(JSON.stringify(showJobs()));
             });
@@ -92,11 +97,11 @@ http.createServer(function (req, res) {
         res.end(); //end the response
     }
 
-}).listen(3001, function () {
-    console.log("server start at port 3001"); //the server object listens on port 3000
+}).listen(3000, function () {
+    console.log("server start at port 3000"); //the server object listens on port 3000
 });
 
-
+repeater();
 
 function checkJobs() {
 
