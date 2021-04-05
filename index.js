@@ -2,7 +2,7 @@ const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const taskDb = require('./task_db');
-
+const moment = require('moment');
 
 
 
@@ -13,71 +13,114 @@ var animalKingdom = "80007823";
 
 var uiHtml = "";
 
-fs.readFile('./ui.html', function(err,html){
+fs.readFile('./ui.html', function (err, html) {
     if (err) {
         throw err;
-    } 
+    }
     uiHtml = html;
 })
 
 //create a server object:
 http.createServer(function (req, res) {
-    res.writeHead(200, {'Content-Type': 'text/html'}); //http header 
+    res.writeHead(200, { 'Content-Type': 'text/html' }); //http header 
 
     var url = req.url;
     console.log(url);
-    if (url ==='/about'){ //describe the url ending you want
+    if (url === '/about') { //describe the url ending you want
         res.write('about'); //write response (html goes here)
         res.end; //end the response
     } else if (url === '/caller') {
-        if (req.method === "POST"){        
+        if (req.method === "POST") {
 
             var body = "";
             req.on("data", function (chunk) {
                 body += chunk;
             });
 
-    
-            req.on("end", async function(){
+
+            req.on("end", async function () {
                 var post = JSON.parse(body);
-                checkAvailability(post.start, post.end, post.passtype, post.park, function(aval){
+                taskDb.addJob(post.park, post.start, post.end, post.passtype, post.NotifYN);
+                // checkAvailability(post.start, post.end, post.passtype, post.park, function(aval){
 
 
-                    res.writeHead(200, { "Content-Type": "text/html" });
-                    res.end(JSON.stringify(aval));
-                });
+                //     res.writeHead(200, { "Content-Type": "text/html" });
+                //     res.end(JSON.stringify(aval));
+                // });
+                checkJobs();
+                res.writeHead(200, { "Content-Type": "text/html" });
+                res.end(JSON.stringify(showJobs()));
             });
 
 
         }
-        
+
+    } else if (url === '/delete') {
+        if (req.method === 'POST') {
+            var body = "";
+
+            req.on("data", function (chunk) {
+                body += chunk;
+            });
+
+
+            req.on("end", async function () {
+                var post = JSON.parse(body);
+                taskDb.deleteDatabaseEntry(post.id);
+                res.writeHead(200, { "Content-Type": "text/html" });
+                res.end(JSON.stringify(showJobs()));
+            });
+        }
+
+    } else if (url === '/getJobs') {
+
+        if (req.method === 'GET') {
+            req.on("data", function (chunk) {
+                body += chunk;
+            });
+
+
+            req.on("end", async function () {
+                checkJobs();
+                res.writeHead(200, { "Content-Type": "text/html" });
+                res.end(JSON.stringify(showJobs()));
+            });
+        }
+
     } else {
         res.write(uiHtml); //write a response
         res.end(); //end the response
     }
 
-  }).listen(3000, function(){
-   console.log("server start at port 3000"); //the server object listens on port 3000
-  });
+}).listen(3001, function () {
+    console.log("server start at port 3001"); //the server object listens on port 3000
+});
 
 
 
-  
+function checkJobs() {
 
-async function checkAvailability(startDate, endDate, passtype, hopefullyOpen, cb) {
-    
-    console.log(hopefullyOpen);
-    if (hopefullyOpen == "hollywood") {
-        var parkCode = hollywood
-    } else if (hopefullyOpen == "magicKingdom") {
-        var parkCode = magicKingdom;
-    } else if ( hopefullyOpen == "epcot") {
-        var parkCode = epcot;
-    } else if (hopefullyOpen == "animalKingdom") {
-        var parkCode = animalKingdom;
+    var taskList = taskDb.listAll();
+
+    for (const [key, val] of Object.entries(taskList)) {
+        checkAvailability(key, val['start'], val['end'], val['passType'], val['park'], function (cb) {
+            taskDb.updateDatabaseEntry(key, "availability", cb);
+        });
+
     }
-    console.log(parkCode);
-    
+}
+
+function showJobs() {
+
+    return taskDb.listAll();
+
+
+}
+
+
+async function checkAvailability(jobId, startDate, endDate, passtype, hopefullyOpen, cb) {
+
+    var parkCode = parkCodeFromName(hopefullyOpen);
     var parkOpenData = {};
     let availabilityMap = {};
 
@@ -89,10 +132,9 @@ async function checkAvailability(startDate, endDate, passtype, hopefullyOpen, cb
     }
 
     const req = https.request(options, res => {
-        console.log(`statusCode: ${res.statusCode}`)
 
         res.on('data', d => {
-            process.stdout.write(d);
+            // process.stdout.write(d);
             var dates = JSON.parse(d);
 
             for (const [key, data] of Object.entries(dates)) {
@@ -119,17 +161,17 @@ async function checkAvailability(startDate, endDate, passtype, hopefullyOpen, cb
                 'dates': availabilityMap,
                 'pass': passtype,
             };
-            console.log(parkOpenData);
 
             for (const [date, value] of Object.entries(availabilityMap)) {
                 if (value == true) {
-                    sendNotification(parkOpenData);
+                    sendNotification(jobId, parkOpenData);
                     break
                 }
             }
 
-            
-            cb(parkOpenData);
+
+            // cb(parkOpenData);
+            cb(availabilityMap);
 
         })
     })
@@ -143,64 +185,68 @@ async function checkAvailability(startDate, endDate, passtype, hopefullyOpen, cb
 
 
 
-function sendNotification(parkOpenData) {
+function sendNotification(jobId, parkOpenData) {
+    console.log('notifier');
+    console.log("ID: " + jobId + " ||| ParkName: " + parkOpenData['park']);
 
     var parkCode = parkOpenData['park'];
-    if (parkCode == magicKingdom) {
-        var park = 'Magic Kingdom'
-    } else if (parkCode == epcot) {
-        var park = 'EPCOT';
-    } else if (parkCode == animalKingdom) {
-        var park = 'Animal Kingdom'
-    } else if (parkCode == hollywood) {
-        var park = 'Hollywood Studios';
-    }
+    var park = nameFromParkCode(parkCode);
+
+    var job = taskDb.readDatabaseEntry(jobId);
+
+    if (job['NotifYN'] == true) {
+        console.log("cehcking last notif time");
+        if (moment(job['lastNotif']).isBefore(moment().subtract(1, 'hours')) || job['lastNotif'] == "") {
 
 
+            var dates = parkOpenData['dates'];
+            var dateList = "";
 
-    var dates = parkOpenData['dates'];
-    var dateList = "";
-
-    for (const [date, bool] of Object.entries(dates)) {
-        if (bool == true) {
-            if (dateList == "") {
-                dateList += date;
-            } else {
-                dateList += " ," + date;
+            for (const [date, bool] of Object.entries(dates)) {
+                if (bool == true) {
+                    if (dateList == "") {
+                        dateList += date;
+                    } else {
+                        dateList += " ," + date;
+                    }
+                }
             }
+
+            const data = JSON.stringify({
+                value1: park,
+                value2: dateList,
+                value3: parkOpenData['pass']
+            })
+
+            console.log('Notification Fired')
+
+            taskDb.updateDatabaseEntry(jobId, "lastNotif", Date.now());
         }
     }
 
-    const data = JSON.stringify({
-        value1: park,
-        value2: dateList,
-        value3: parkOpenData['pass']
-    })
+}
 
-    const iftttUrl = {
-        hostname: 'maker.ifttt.com',
-        port: 443,
-        path: '/trigger/disney_checker/with/key/[KEYHERE]',
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': data.length
-        }
+
+function parkCodeFromName(hopefullyOpen) {
+    if (hopefullyOpen == "hollywood") {
+        return hollywood
+    } else if (hopefullyOpen == "magicKingdom") {
+        return magicKingdom;
+    } else if (hopefullyOpen == "epcot") {
+        return epcot;
+    } else if (hopefullyOpen == "animalKingdom") {
+        return animalKingdom;
     }
+}
 
-    const req = https.request(iftttUrl, res => {
-        console.log(`statusCode: ${res.statusCode}`)
-
-        res.on('data', d => {
-          process.stdout.write(d)
-        })
-      })
-
-      req.on('error', error => {
-        console.error(error)
-      })
-
-      req.write(data)
-      req.end()
-
+function nameFromParkCode(parkCode) {
+    if (parkCode == magicKingdom) {
+        return 'Magic Kingdom'
+    } else if (parkCode == epcot) {
+        return 'EPCOT';
+    } else if (parkCode == animalKingdom) {
+        return 'Animal Kingdom'
+    } else if (parkCode == hollywood) {
+        return 'Hollywood Studios';
+    }
 }

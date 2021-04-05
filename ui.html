@@ -12,63 +12,140 @@
     <script src="https://momentjs.com/downloads/moment.js"></script>
     <script src="https://momentjs.com/downloads/moment-timezone-with-data.js"></script>
 
+
     <style>
-         #results {
-             background-color: white;
-             display: flex;
+        #results {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .jobCard {
+            display: flex;
+            justify-content: flex-start;
+            padding: .5em;
+            margin: .5em;
+            background-color: lavenderblush;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+        }
+
+        .jobTitleCard {
+            width: 10%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+
+        }
+
+        .availContainer {
+            display: flex;
+            width: 90%;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            align-content: flex-start;
+        }
+
+        .avail {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 2em;
+            width: 2em;
+            font-size: 2em;
+            color: #fff;
+            text-align: center;
+            border-radius: 50%;
+            margin: .5em;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+        }
+
+        .flexText {
+            display: flex;
+        }
+
+        .false {
+            background-color: #FF3D00;
+        }
+
+        .true {
+            background-color: #1DE9B6;
+        }
+
+        .park {
+            font-size: 1em;
+            margin: .25em;
+        }
+
+        .pass {
+            font-size: 1em;
+        }
+
+
+
+
+        /* #results {
+            background-color: white;
+            display: flex;
             justify-content: space-evenly;
 
-         }
-         .weekday{
-             display:flex;
-             flex-direction: column;
+        }
+
+        .weekday {
+            display: flex;
+            flex-direction: column;
             justify-content: flex-start;
             align-items: stretch;
-         }
+        }
 
-         #dates {
-             background-color: white;
-             display: flex;
+        #dates {
+            background-color: white;
+            display: flex;
             flex-wrap: wrap;
             justify-content: space-evenly;
 
-         }
-         .card {
-             display: flex;
-             width: 10vw;
-             height: 10vw;
-             flex-direction: column;
-             justify-content: center;
-             align-items: center;
-             padding:2%;
-             margin:2%;
-         }
-         .card > .title {
-             text-align: center;
+        }
+
+        .card {
+            display: flex;
+            width: 10vw;
+            height: 10vw;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2%;
+            margin: 2%;
+        }
+
+        .card>.title {
+            text-align: center;
             font-size: 1em;
-             padding:2%;
-             width: 100%;
-             background-color: thistle;
-
-         }
-         .card > .bool{
-             text-align: center;
-            padding:2%;
-             font-size: 4em;
-            height:100%;
+            padding: 2%;
             width: 100%;
-         }
-        
-         .card > .true {
-             background-color: chartreuse;
-         }
-         .card > .false {
-             background-color: crimson;
-         }
-         .card > .neutral {
-             background-color: grey;
-         }
+            background-color: thistle;
 
+        }
+
+        .card>.bool {
+            text-align: center;
+            padding: 2%;
+            font-size: 4em;
+            height: 100%;
+            width: 100%;
+        }
+
+        .card>.true {
+            background-color: chartreuse;
+        }
+
+        .card>.false {
+            background-color: crimson;
+        }
+
+        .card>.neutral {
+            background-color: grey;
+        } */
     </style>
 
 </head>
@@ -78,71 +155,22 @@
     <script>
 
 
+
         function caller() {
             var s = $("#start").val();
             var e = $("#end").val();
             var park = $("#parkPicker").val();
+            var notif = document.getElementById("NotifYN").checked;
+            console.log(notif);
             $.ajax({
                 //https://disneyworld.disney.go.com/availability-calendar/api/calendar?segment=tickets&startDate=2021-10-01&endDate=2021-10-02
                 url: "/caller",
                 method: 'POST',
                 contentType: "application/json; charset=utf-8",
                 dataType: 'json',
-                data: JSON.stringify({ start: s, end: e, park: park, passtype: $('#passPicker').val() }),
+                data: JSON.stringify({ start: s, end: e, park: park, passtype: $('#passPicker').val(), NotifYN: notif }),
                 success: function (result) {
-                    $("#dates").text("");
-                    function cardMaker(date, bool) {
-                        if (date) {
-                            title = "Date: "+date;
-                        } else {
-                            title ="not in range";
-                        }
-
-                        if (bool == true){
-                            var symbol = '&#10004';
-                            var className = 'true';
-                        } else if (bool== false){
-                            var symbol = '&#10006';
-                            var className = 'false';
-                        } else {
-                            var symbol = "&#10145";
-                            var className = 'neutral';
-                        }
-                        return '<div class = "card"><div class = "title">'+title+'</div><div class = "bool '+ className +'"> '+symbol+'</div></div>'
-                    }
-                
-                    var dates = 0;
-                    var trues = 0;
-                    for (const [date, bool] of Object.entries(result["dates"])) {
-
-                        var day = moment.tz(date, 'US/Eastern');
-                        console.log(day);
-                        var weekday = day.day();
-
-                        if (dates == 0) {
-                            $("#results").html("<div class = 'weekday' id = '0'></div><div class = 'weekday' id = '1'></div><div class = 'weekday' id = '2'></div><div class = 'weekday' id = '3'></div><div class = 'weekday' id = '4'></div><div class = 'weekday' id = '5'></div><div class = 'weekday' id = '6'></div>");
-                            var i=0;
-                            while (i < weekday) {
-                                $('#'+i).append(cardMaker());
-                                i++;
-                            }
-                        }
-
-                        $('#'+ weekday).append(cardMaker(date, bool));
-
-                            // $("#dates").append(cardMaker(date, bool));
-                        if (bool == true) {
-
-                            trues++;
-                            $("body").css("background-color", "#00ff66");
-                        }
-                        dates++;
-                    }
-
-                    if (trues == 0) {
-                        $("body").css("background-color", "#ffffff");
-                    }
-
+                    showDates(result);
 
                 },
                 error: function (e) {
@@ -152,18 +180,140 @@
             });
         }
 
-        function repeater () {
-            setInterval(caller, 60000);
+
+        function deleteJob(id) {
+            console.log("pretend delete job: " + id);
+            $.ajax({
+                //https://disneyworld.disney.go.com/availability-calendar/api/calendar?segment=tickets&startDate=2021-10-01&endDate=2021-10-02
+                url: "/delete",
+                method: 'POST',
+                contentType: "application/json; charset=utf-8",
+                dataType: 'json',
+                data: JSON.stringify({ id: id }),
+                success: function (result) {
+                    showDates(result);
+
+                },
+                error: function (e) {
+                    console.log("in the error");
+                    console.log(e);
+                }
+            });
+        }
+
+        function getJobs() {
+            console.log("getting jobs");
+            $.ajax({
+                //https://disneyworld.disney.go.com/availability-calendar/api/calendar?segment=tickets&startDate=2021-10-01&endDate=2021-10-02
+                url: "/getJobs",
+                method: 'GET',
+                contentType: "application/json; charset=utf-8",
+                dataType: 'json',
+                success: function (result) {
+                    showDates(result);
+
+                },
+                error: function (e) {
+                    console.log("in the error");
+                    console.log(e);
+                }
+            });
+        }
+
+        function showDates(result) {
+            $("#results").text("");
+            console.log(result);
+            for (const [key, val] of Object.entries(result)) {
+                console.log(key);
+                console.log(val);
+
+                var avail = '<div class = "availContainer">';
+                if (jQuery.isEmptyObject(val['availability'])) {
+                    avail += simpleDiv('avail', "No data yet... Check back soon");
+                } else {
+                    for (const [rawDate, bool] of Object.entries(val['availability'])) {
+                        var date = moment.tz(rawDate, 'US/Eastern');
+                        var day = date.date();
+                        avail += availCard(day, bool);
+                    }
+                }
+                avail += '</div>';
+
+                var startDate = moment.tz(val['start'], 'US/Eastern');
+                var endDate = moment.tz(val['end'], 'US/Eastern');
+                $('#results').append(jobCard(key, val['park'], val['passType'], startDate, endDate, avail));
+
+            }
+
+            function jobCard(id, park, pass, start, end, availablity) {
+                return '<div class = "jobCard">' + jobTitleCard(id, park, pass, start, end) + availablity + '</div>'
+            }
+
+            function jobTitleCard(id, park, pass, start, end) {
+                if (start.format('MMMM') == end.format('MMMM')) {
+                    var month = start.format('MMMM');
+                } else {
+                    var month = start.format('MMMM') + ' - ' + end.format('MMMM')
+                }
+
+
+                return '<div class = "jobTitleCard">' +
+                    simpleDiv('date', month + ' ' + start.format('YYYY')) +
+                    simpleDiv("park", park) +
+                    simpleDiv("pass", pass) +
+                    simpleDiv('deleteButton', "<button onclick = 'deleteJob(" + id + ")' type = 'button' class = 'delete' > delete </button>") +
+                    '</div>'
+            }
+
+            function simpleDiv(cssClass, content) {
+                return '<div class = "' + cssClass + '">' + content + '</div>'
+            }
+
+            function availCard(day, bool) {
+                if (bool == true) {
+                    var className = true;
+                } else {
+                    var className = false;
+                }
+                return '<div class="avail ' + className + '"><div class = "flexText">' + day + '</div></div>'
+            }
+        }
+
+
+        function repeater() {
+            getJobs();
+            setInterval('getJobs()', 60000);
+        }
+
+        function cardMaker(date, bool) {
+            if (date) {
+                title = "Date: " + date;
+            } else {
+                title = "not in range";
+            }
+
+            if (bool == true) {
+                var symbol = '&#10004';
+                var className = 'true';
+            } else if (bool == false) {
+                var symbol = '&#10006';
+                var className = 'false';
+            } else {
+                var symbol = "&#10145";
+                var className = 'neutral';
+            }
+            return '<div class = "card"><div class = "title">' + title + '</div><div class = "bool ' + className + '"> ' + symbol + '</div></div>'
         }
 
 
         $(function () {
 
+            repeater();
 
             $("#submit").click(function () {
                 console.log("hello");
                 caller();
-                repeater();
+                // repeater();
             });
 
         });
@@ -200,14 +350,23 @@
         </select>
     </div>
 
+    <div>
+        <input type="checkbox" id="NotifYN" name="NotifYN" value="NotifYN">
+        <label for="NotifYN">Would you like notifications?</label>
+    </div>
+
     <button id="submit">Submit</button>
 
     <div id="results">
     </div>
 
-    
+
     <div id='dates'>
     </div>
+
+
+
+
 </body>
 
 </html>

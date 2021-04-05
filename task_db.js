@@ -1,4 +1,6 @@
-const dbPath = require('./taskDb.json');
+const db = require('./taskDb.json');
+const fs = require('fs');
+const dbPath = "./taskDB.json";
 
 function addJob(park, start, end, passType, NotifYN) {
     // JobId: {park: "",
@@ -13,10 +15,11 @@ function addJob(park, start, end, passType, NotifYN) {
         end: end, 
         passType: passType,
         NotifYN: NotifYN,
-        lastNotif: new Date.now() 
+        lastNotif: "",
+        availability: {}
     }
 
-    let database = JSON.parse(fs.readFileSync(data));
+    let database = JSON.parse(fs.readFileSync(dbPath));
 
     let id = Object.keys(database).length + 1;
 
@@ -38,13 +41,15 @@ function readDatabaseEntry(id) {
 
 }
 
-function updateDatabaseEntry(id, data) {
+function updateDatabaseEntry(id, field, data) {
 
     let database = JSON.parse(fs.readFileSync(dbPath));
 
-    database[id] = data;
+    database[id][field] = data;
 
     fs.writeFileSync(dbPath, JSON.stringify(database));
+
+    console.log('update complete');     
 
 }
 
@@ -52,7 +57,7 @@ function deleteDatabaseEntry(id) {
 
     let database = JSON.parse(fs.readFileSync(dbPath));
 
-    database[id] = null;
+    delete database[id];
 
     fs.writeFileSync(dbPath, JSON.stringify(database));
 }
