@@ -103,6 +103,7 @@ function checkJobs() {
     var taskList = taskDb.listAll();
 
     for (const [key, val] of Object.entries(taskList)) {
+        console.log(key);
         checkAvailability(key, val['start'], val['end'], val['passType'], val['park'], function (cb) {
             taskDb.updateDatabaseEntry(key, "availability", cb);
         });
