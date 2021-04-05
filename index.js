@@ -3,7 +3,7 @@ const http = require('http');
 const https = require('https');
 const taskDb = require('./task_db');
 const moment = require('moment');
-
+const keys = require('./keys');
 
 
 var hollywood = "80007998";
@@ -195,6 +195,8 @@ function sendNotification(jobId, parkOpenData) {
 
     var job = taskDb.readDatabaseEntry(jobId);
 
+    console.log(keys.IFTTTKEY);
+
     if (job['NotifYN'] == true) {
         console.log("cehcking last notif time");
         if (moment(job['lastNotif']).isBefore(moment().subtract(1, 'hours')) || job['lastNotif'] == "") {
@@ -218,6 +220,33 @@ function sendNotification(jobId, parkOpenData) {
                 value2: dateList,
                 value3: parkOpenData['pass']
             })
+            const iftttUrl = {
+                hostname: 'maker.ifttt.com',
+                port: 443,
+                path: '/trigger/disney_checker/with/key/' + keys.IFTTTKEY,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': data.length
+                }
+            }
+        
+            const req = https.request(iftttUrl, res => {
+                console.log(`statusCode: ${res.statusCode}`)
+        
+                res.on('data', d => {
+                  process.stdout.write(d)
+                })
+              })
+        
+              req.on('error', error => {
+                console.error(error)
+              })
+        
+              req.write(data);
+              req.end();
+        
+        
 
             console.log('Notification Fired')
 
